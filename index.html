@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gokul T - Advanced Data Intelligence</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;900&family=JetBrains+Mono:wght@100;400&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/studio-freight/lenis@1.0.29/bundled/lenis.min.js"></script>
+    <style>
+        :root {
+            --primary: #39ff14; /* Radium Green */
+            --secondary: #00f3ff; /* Neon Cyan */
+            --bg: #000000;
+            --text: #FFFFFF;
+            --muted: #666666;
+            --radium-glow: rgba(57, 255, 20, 0.6);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: radial-gradient(circle at center, rgba(57, 255, 20, 0.05) 0%, #000000 70%); color: var(--text); font-family: 'Inter', sans-serif; overflow-x: hidden; }
+        
+        ::selection { background: var(--primary); color: #000; }
+        
+        @keyframes pulseRadiumText {
+            0% { text-shadow: 0 0 15px var(--radium-glow), 0 0 30px var(--radium-glow); color: var(--primary); }
+            50% { text-shadow: 0 0 25px var(--primary), 0 0 50px var(--primary), 0 0 70px var(--radium-glow); color: #fff; }
+            100% { text-shadow: 0 0 15px var(--radium-glow), 0 0 30px var(--radium-glow); color: var(--primary); }
+        }
+        
+        @keyframes pulseBorder {
+            0% { box-shadow: 0 0 10px rgba(57,255,20,0.1); border-color: rgba(57,255,20,0.2); }
+            50% { box-shadow: 0 0 25px rgba(57,255,20,0.4); border-color: rgba(57,255,20,0.6); }
+            100% { box-shadow: 0 0 10px rgba(57,255,20,0.1); border-color: rgba(57,255,20,0.2); }
+        }
+
+        #webgl-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0; pointer-events: none; }
+
+        #app { width: 100%; max-width: 1400px; min-height: 100vh; margin: 0 auto; position: relative; padding-bottom: 200px; z-index: 10; display: flex; flex-direction: column; align-items: center; pointer-events: auto; }
+
+        nav { position: fixed; top: 40px; left: 40px; right: 40px; display: flex; justify-content: space-between; align-items: center; z-index: 100; text-shadow: 0 2px 10px rgba(0,0,0,0.8); }
+        .nav-logo { font-weight: 900; font-size: 20px; letter-spacing: -1px; text-decoration: none; color: #fff; pointer-events: auto; }
+        .nav-links { display: flex; gap: 40px; }
+        .nav-item { color: #fff; text-decoration: none; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; transition: 0.3s; pointer-events: auto; }
+        .nav-item:hover { color: var(--primary); }
+
+        section { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; padding: 100px 20px; width: 100%; pointer-events: auto; }
+
+        #hero { align-items: center; text-align: center; pointer-events: auto; z-index: 20; height: 100vh; justify-content: center; text-shadow: 0 5px 20px rgba(0,0,0,0.8); }
+        .huge-title { font-size: 13vw; font-weight: 900; line-height: 0.85; text-transform: uppercase; margin: 0; letter-spacing: -0.05em; color: var(--primary); animation: pulseRadiumText 4s infinite alternate; pointer-events: auto; }
+        .subtitle { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 100; color: #fff; margin-top: 30px; letter-spacing: 8px; text-transform: uppercase; text-shadow: 0 2px 10px rgba(0,0,0,0.8); }
+
+        .section-label { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted); margin-bottom: 60px; letter-spacing: 2px; text-transform: uppercase; border-bottom: 1px solid #333; padding-bottom: 10px; display: inline-block; }
+        
+        /* Skills Grid */
+        .skills-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 30px; width: 100%; margin-top: 40px; pointer-events: auto; }
+        @media(max-width: 1024px) { .skills-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media(max-width: 600px) { .skills-grid { grid-template-columns: 1fr; } }
+        
+        .skill-item { background: rgba(10,20,10,0.85); border: 1px solid rgba(57,255,20,0.2); padding: 30px; border-radius: 12px; transition: 0.4s; position: relative; overflow: hidden; animation: pulseBorder 5s infinite alternate; }
+        .skill-item:hover { background: rgba(57,255,20,0.08); border-color: var(--primary); box-shadow: 0 10px 40px var(--radium-glow); }
+        .skill-name { font-size: 18px; font-weight: 600; color: #fff; margin-bottom: 20px; font-family: 'JetBrains Mono', monospace; }
+        .skill-bar-bg { width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; position: relative; }
+        .skill-bar-fill { height: 100%; background: var(--primary); width: 0; transition: width 1.5s cubic-bezier(0.16, 1, 0.3, 1); }
+        .skill-level { position: absolute; right: 30px; top: 30px; font-size: 14px; color: var(--secondary); font-family: 'JetBrains Mono', monospace; font-weight: bold; }
+
+        /* Project Layout */
+        .project-list { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+        @media (max-width: 1024px) { .project-list { grid-template-columns: 1fr; } }
+        
+        .project-card { background: rgba(5,15,5,0.9); border: 1px solid rgba(57,255,20,0.2); border-radius: 12px; padding: 40px; transition: 0.5s cubic-bezier(0.16, 1, 0.3, 1); position: relative; overflow: hidden; pointer-events: auto; animation: pulseBorder 6s infinite alternate-reverse; }
+        .project-card:hover { border-color: var(--primary); box-shadow: 0 20px 50px rgba(57,255,20,0.4); }
+        .project-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at center, rgba(57,255,20,0.1) 0%, transparent 70%); opacity: 0; transition: 0.4s; z-index: 1; pointer-events: none; }
+        .project-card:hover::before { opacity: 1; }
+        
+        .view-more { display: inline-block; margin-top: 25px; color: #000; background: var(--primary); padding: 8px 15px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-weight: 900; font-size: 12px; text-transform: uppercase; opacity: 0; transition: 0.4s; transform: translateY(10px); position: relative; z-index: 2; }
+        .project-card:hover .view-more { opacity: 1; transform: translateY(0); box-shadow: 0 0 15px rgba(57,255,20,0.5); }
+
+        .project-title { font-size: 3vw; font-weight: 900; letter-spacing: -1px; color: var(--primary); text-shadow: 0 0 15px rgba(57,255,20,0.5); margin-bottom: 15px; position: relative; z-index: 2; animation: pulseRadiumText 3s infinite alternate; }
+        @media (max-width: 1024px) { .project-title { font-size: 6vw; } }
+        .project-tags { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--secondary); display: flex; gap: 15px; text-transform: uppercase; margin-bottom: 20px; position: relative; z-index: 2; }
+        .card-desc { font-size: 16px; color: #ccc; line-height: 1.6; position: relative; z-index: 2; }
+
+        /* Fullscreen Overlay for Details */
+        #project-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.98); z-index: 99999; display: block; overflow-y: auto; opacity: 0; pointer-events: none; transition: 0.6s cubic-bezier(0.86, 0, 0.07, 1); clip-path: circle(0% at 50% 50%); padding: 100px 0; }
+        #project-overlay.active { opacity: 1; pointer-events: auto; clip-path: circle(150% at 50% 50%); }
+
+        #project-overlay::-webkit-scrollbar { width: 8px; }
+        #project-overlay::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
+        #project-overlay::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 4px; }
+
+        .overlay-close { position: fixed; top: 40px; right: 40px; font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #fff; text-transform: uppercase; letter-spacing: 2px; padding: 10px 20px; border: 1px solid rgba(255,255,255,0.3); border-radius: 50px; transition: 0.3s; z-index: 100000; background: rgba(0,0,0,0.8); }
+        .overlay-close:hover { background: var(--primary); border-color: var(--primary); color: #000; }
+
+        .overlay-content { width: 90%; max-width: 1400px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 60px; padding-right: 20px; padding-top: 40px; padding-bottom: 80px; }
+        @media (max-width: 1024px) { .overlay-content { grid-template-columns: 1fr; } }
+        
+        @keyframes soundWave {
+            0% { transform: translate(-50%, -50%) scale(0.2); opacity: 0.8; border-width: 4px; }
+            100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; border-width: 1px; }
+        }
+        .sound-wave { position: fixed; border: solid var(--primary); border-radius: 50%; pointer-events: none; z-index: 9999998; animation: soundWave 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; width: 100px; height: 100px; }
+        
+        .overlay-content::-webkit-scrollbar { width: 8px; }
+        .overlay-content::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
+        .overlay-content::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 4px; }
+
+        .overlay-left { display: flex; flex-direction: column; gap: 40px; }
+        .overlay-title { font-size: 4vw; font-weight: 900; line-height: 1; color: var(--primary); text-transform: uppercase; margin-bottom: 20px; border-bottom: 2px solid var(--primary); padding-bottom: 20px; animation: pulseRadiumText 3s infinite alternate; }
+        @media (max-width: 1024px) { .overlay-title { font-size: 8vw; } }
+        
+        .category-block h3 { font-family: 'JetBrains Mono', monospace; font-size: 16px; color: var(--secondary); margin-bottom: 15px; letter-spacing: 1px; }
+        .category-block p { font-size: 18px; color: #ddd; line-height: 1.6; font-weight: 300; }
+        .category-block ul { list-style: none; padding: 0; }
+        .category-block li { font-size: 16px; color: #ccc; line-height: 1.7; margin-bottom: 10px; position: relative; padding-left: 25px; }
+        .category-block li::before { content: '►'; position: absolute; left: 0; color: var(--primary); font-size: 12px; top: 4px; }
+
+        .overlay-right { display: flex; flex-direction: column; gap: 40px; }
+        .real-image-container { width: 100%; background: #111; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 20px 50px rgba(0,0,0,0.5); opacity: 0; transform: translateY(50px); transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+        .real-image-container.in-view { opacity: 1; transform: translateY(0); }
+        .real-image-container img { width: 100%; height: auto; display: block; object-fit: cover; }
+        
+        @keyframes subtlePan {
+            0% { transform: scale(1.0) translate(0, 0); }
+            50% { transform: scale(1.1) translate(-2%, -2%); }
+            100% { transform: scale(1.0) translate(0, 0); }
+        }
+        .real-image-container img.animated-img { animation: subtlePan 12s infinite alternate ease-in-out; }
+        
+        .btn { display: inline-flex; align-items: center; justify-content: center; padding: 20px 40px; background: transparent; color: #fff; border: 1px solid rgba(255,255,255,0.3); border-radius: 100px; font-size: 12px; font-family: 'JetBrains Mono', monospace; font-weight: 600; text-decoration: none; transition: 0.4s; text-transform: uppercase; letter-spacing: 2px; position: relative; z-index: 50; overflow: hidden; width: 100%; text-align: center; }
+        .btn::before { content: ''; position: absolute; top: 100%; left: 0; width: 100%; height: 100%; background: var(--primary); transition: 0.4s; z-index: -1; }
+        .btn:hover::before { top: 0; }
+        .btn:hover { color: #000; border-color: var(--primary); box-shadow: 0 0 30px var(--radium-glow); font-weight: 900; }
+
+        /* About Section */
+        .about-text { font-size: 42px; font-weight: 300; line-height: 1.4; color: #fff; letter-spacing: -1px; max-width: 1000px; text-shadow: 0 4px 20px rgba(0,0,0,0.9); position: relative; z-index: 2; }
+        .about-text span { color: var(--primary); font-style: italic; font-weight: 600; text-shadow: 0 4px 20px rgba(57,255,20,0.4); }
+
+        #contact { text-align: left; }
+        .huge-contact { font-size: 8vw; font-weight: 900; line-height: 0.9; margin-bottom: 60px; letter-spacing: -3px; color: var(--primary); animation: pulseRadiumText 4s infinite alternate; pointer-events: auto; text-shadow: 0 5px 20px rgba(0,0,0,0.9); position: relative; z-index: 2; }
+
+        /* GSAP Animation initial states */
+        .gsap-reveal { opacity: 0; transform: translateY(50px); }
+    </style>
+</head>
+<body>
+    <canvas id="webgl-canvas"></canvas>
+
+    <nav>
+        <a href="#" class="nav-logo interactable">GOKUL T.</a>
+        <div class="nav-links">
+            <a href="#about" class="nav-item interactable">About</a>
+            <a href="#education" class="nav-item interactable">Education</a>
+            <a href="#skills" class="nav-item interactable">Skills</a>
+            <a href="#projects" class="nav-item interactable">Work</a>
+            <a href="#contact" class="nav-item interactable">Contact</a>
+        </div>
+    </nav>
+
+    <!-- Overlay Container -->
+    <div id="project-overlay" data-lenis-prevent="true">
+        <div class="overlay-close interactable" onclick="closeProject()">[ CLOSE X ]</div>
+        <div class="overlay-content">
+            <div class="overlay-left">
+                <h2 id="ov-title" class="overlay-title">Project Title</h2>
+                
+                <div class="category-block">
+                    <h3>01 // THE MOTIVE</h3>
+                    <p id="ov-motive">The core business problem or reason this project was built.</p>
+                </div>
+                
+                <div class="category-block">
+                    <h3>02 // BUSINESS IMPACT</h3>
+                    <p id="ov-impact">The quantifiable results of the project.</p>
+                </div>
+
+                <div class="category-block">
+                    <h3>03 // WHAT I DONE (TECHNICAL EXECUTION)</h3>
+                    <ul id="ov-done">
+                        <!-- Populated by JS -->
+                    </ul>
+                </div>
+                
+                <div class="category-block" style="margin-top: 20px;">
+                    <h3>04 // ACCESS LINK</h3>
+                    <a id="ov-link" href="#" target="_blank" class="btn interactable">View on GitHub</a>
+                </div>
+            </div>
+            
+            <div class="overlay-right" id="ov-gallery">
+                <!-- Images dynamically inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <div id="app">
+        <section id="hero">
+            <h1 class="huge-title interactable gsap-hero">DATA<br>INTELLIGENCE</h1>
+            <p class="subtitle gsap-hero">Business Analyst | Data Analyst | MIS Executive</p>
+        </section>
+        
+        <section id="about">
+            <div class="section-label gsap-reveal">01 // Identity</div>
+            <div class="about-text interactable gsap-reveal">
+                I am a versatile <span>Business & Data Analyst</span> specializing in transforming complex unstructured data into executive-level MIS reports and actionable intelligence. I bridge the gap between deep technical pipelines and strategic business outcomes. With a strong foundation in Business Administration (BBA) and a relentless drive for uncovering hidden patterns, I engineer data solutions that drive measurable growth. My technical arsenal—spanning SQL, Python, Power BI, and Advanced Excel—empowers me to turn abstract numbers into clear, high-impact business narratives.
+            </div>
+        </section>
+
+        <section id="education">
+            <div class="section-label gsap-reveal">02 // Academic Foundation</div>
+            <div class="education-grid gsap-reveal" style="display: flex; gap: 40px; flex-wrap: wrap; margin-top: 20px; width: 100%;">
+                <div class="edu-card interactable" style="flex: 1; min-width: 300px; background: rgba(10,20,10,0.8); padding: 40px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); transition: 0.4s;">
+                    <h3 style="font-size: 24px; color: var(--primary); margin-bottom: 10px; font-family: 'JetBrains Mono', monospace;">Bachelor of Business Administration</h3>
+                    <p style="font-size: 16px; color: #fff; margin-bottom: 20px; font-weight: 600;">Core Business Strategy & Operations</p>
+                    <p style="color: #ccc; line-height: 1.6; font-size: 15px;">Leveraging core business principles to inform data-driven decision-making. The strategic mindset developed during my BBA serves as the cornerstone for my analytical frameworks, ensuring every dashboard aligns with corporate objectives.</p>
+                </div>
+                <div class="edu-card interactable" style="flex: 1; min-width: 300px; background: rgba(10,20,10,0.8); padding: 40px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); transition: 0.4s;">
+                    <h3 style="font-size: 24px; color: var(--primary); margin-bottom: 10px; font-family: 'JetBrains Mono', monospace;">Advanced Data Specialization</h3>
+                    <p style="font-size: 16px; color: #fff; margin-bottom: 20px; font-weight: 600;">Independent Project-Based Learning</p>
+                    <p style="color: #ccc; line-height: 1.6; font-size: 15px;">Mastered data intelligence paradigms through rigorous end-to-end project execution. Expertise encompasses complex SQL architectures, full-stack Power BI development, and automated Python ETL pipelines.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- NEW SKILLS SECTION -->
+        <section id="skills">
+            <div class="section-label gsap-reveal">03 // Technical Capabilities</div>
+            <div class="skills-grid" id="skills-container">
+                <!-- Skills generated by JS -->
+            </div>
+        </section>
+
+        <section id="projects">
+            <div class="section-label gsap-reveal">04 // Selected Works</div>
+            <div class="project-list" id="projects-grid">
+                <!-- Projects generated by JS -->
+            </div>
+        </section>
+        
+        <section id="contact">
+            <div class="section-label gsap-reveal">05 // INITIATE</div>
+            <h2 class="huge-contact interactable gsap-reveal">START A<br>PROJECT</h2>
+            <div class="gsap-reveal" style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 40px;">
+                <a href="mailto:kannagokul046@gmail.com" class="btn interactable">Email: kannagokul046@gmail.com</a>
+                <a href="https://www.linkedin.com/in/gokul--analyst/" target="_blank" class="btn interactable" style="background: transparent;">LinkedIn Profile</a>
+                <a href="tel:+919487450178" class="btn interactable" style="background: transparent;">Call: +91 9487450178</a>
+                <a href="https://wa.me/919487450178" target="_blank" class="btn interactable" style="background: transparent; color: #25D366; border-color: #25D366;">WhatsApp Me</a>
+                <a href="https://github.com/kannagokul046-dot" target="_blank" class="btn interactable" style="background: transparent;">GitHub Archive</a>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        gsap.registerPlugin(ScrollTrigger);
+
+        // --- Data ---
+        const SKILLS = [
+            { name: 'SQL & Window Functions', level: 92 },
+            { name: 'Power BI & DAX', level: 88 },
+            { name: 'Python (Pandas/ETL)', level: 80 },
+            { name: 'Advanced Excel & VBA', level: 90 },
+            { name: 'MIS Reporting', level: 85 },
+            { name: 'Gap Analysis', level: 82 },
+            { name: 'BRD / SRD Docs', level: 80 },
+            { name: 'Data Visualization', level: 85 }
+        ];
+
+        const PROJECTS = [
+            {
+                id: 'banking',
+                title: 'Banking Fraud Dashboard',
+                tags: ['BA', 'DA', 'SQL', 'Python'],
+                desc: 'Automated transaction screening dashboard reducing manual investigation times.',
+                motive: 'To drastically reduce manual transaction investigation times and minimize false positive fraud alerts in a high-volume banking environment.',
+                impact: 'Reduced false positive alerts by 35% and saved 40+ hours per week of manual investigation time for the compliance team.',
+                done: [
+                    'Conducted Stakeholder Analysis and drafted BRD and FRD documents to map technical compliance.',
+                    'Analyzed 10,000+ transactions using Python to identify and isolate fraud patterns.',
+                    'Engineered a robust ETL pipeline utilizing Python Pandas for data cleansing.',
+                    'Wrote complex SQL queries (CTEs, Window Functions) to extract granular transaction histories.',
+                    'Designed an AI-powered system architecture for real-time risk scoring, cutting latency by 40%.'
+                ],
+                images: [
+                    'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1200&q=80',
+                    'https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=1200&q=80',
+                    'https://images.unsplash.com/photo-1518186285589-2f7649de83e0?auto=format&fit=crop&w=1200&q=80'
+                ],
+                link: 'https://github.com/kannagokul046-dot/portfolio'
+            },
+            {
+                id: 'ecommerce',
+                title: 'E-Commerce Analytics',
+                tags: ['MIS', 'Power BI', 'DAX'],
+                desc: 'Dynamic MIS reports to track KPIs and resolve checkout bottlenecks.',
+                motive: 'To identify and resolve critical UI/UX bottlenecks in the checkout flow that were causing severe customer drop-offs and lost revenue.',
+                impact: 'Increased checkout completion rate by 22% and provided real-time KPI tracking for C-level executives.',
+                done: [
+                    'Conducted comprehensive Gap Analysis on customer purchase trends and dropout rates.',
+                    'Drafted clear BRDs proposing technical enhancements to the payment gateway integration.',
+                    'Built dynamic Power BI dashboards utilizing complex DAX measures as central MIS reporting tools.',
+                    'Integrated multiple disparate data sources into a unified dimensional data model for rapid querying.'
+                ],
+                images: [
+                    'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1200&q=80',
+                    'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1200&q=80',
+                    'https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?auto=format&fit=crop&w=1200&q=80'
+                ],
+                link: 'https://github.com/kannagokul046-dot/ecommerce-sql-data-analysis'
+            },
+            {
+                id: 'naukri',
+                title: 'Naukri Market Data',
+                tags: ['DA', 'Pandas', 'SQL'],
+                desc: 'End-to-end data pipeline visualizing entry-level job market trends.',
+                motive: 'To uncover the empirical core skill requirements for analyst roles and align educational curriculums with actual industry demands.',
+                impact: 'Processed 10,000+ job listings to identify the top 5 mandatory skills for entry-level analysts in 2026.',
+                done: [
+                    'Programmed automated extraction scripts to pull raw market data from over 10,000 live job postings.',
+                    'Cleaned and standardized heavily unstructured text data using Python (Pandas) and Regex.',
+                    'Executed complex SQL aggregations to map frequency distributions of technical skills.',
+                    'Authored System Requirement Documents (SRD) and designed wireframes for an automated analytics portal.'
+                ],
+                images: [
+                    'https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?auto=format&fit=crop&w=1200&q=80',
+                    'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1200&q=80',
+                    'https://images.unsplash.com/photo-1526628953301-3e589a6a8b74?auto=format&fit=crop&w=1200&q=80'
+                ],
+                link: 'https://github.com/kannagokul046-dot/Job-Market-Analysis'
+            },
+            {
+                id: 'mercedes',
+                title: 'Mercedes-Benz Sales',
+                tags: ['BA', 'Excel', 'SQL'],
+                desc: 'Robust MIS frameworks optimizing global resource planning.',
+                motive: 'To centralize fragmented global sales data into a unified, actionable reporting structure for executive leadership and regional managers.',
+                impact: 'Identified $2M in underperforming territories, enabling swift resource reallocation and preventing projected Q3 losses.',
+                done: [
+                    'Analyzed over 1 million rows of regional sales data utilizing Advanced Excel (Pivot Tables, Macros) and SQL.',
+                    'Developed an automated pipeline to update executive-level Power BI dashboards daily.',
+                    'Elicited and documented functional requirements and key performance indicators from regional managers.',
+                    'Identified underperforming territories early in the financial quarter, preventing projected losses.'
+                ],
+                images: [
+                    'https://images.unsplash.com/photo-1614031679244-18e576620581?auto=format&fit=crop&w=1200&q=80',
+                    'https://images.unsplash.com/photo-1553440569-bcc63803a83d?auto=format&fit=crop&w=1200&q=80',
+                    'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1200&q=80'
+                ],
+                link: 'https://github.com/kannagokul046-dot/mercedes-benz-sales-analysis'
+            },
+            {
+                id: 'netflix',
+                title: 'Netflix BI Dashboard',
+                tags: ['BI', 'Power BI', 'DAX'],
+                desc: 'Mapped platform growth against global audience retention targets.',
+                motive: 'To translate unstructured streaming data into measurable BI tracking that directly informs content acquisition strategy.',
+                impact: 'Isolated the top 3 content genres driving 80% of regional retention, directly influencing the next quarter acquisition budget.',
+                done: [
+                    'Conducted stakeholder interviews to prioritize functional system requirements for the BI platform.',
+                    'Developed complex DAX measures in Power BI to calculate custom ROI and viewer retention metrics.',
+                    'Performed rigorous mapping of As-Is content performance against projected To-Be goals.',
+                    'Identified specific content genres driving 80% of regional retention.'
+                ],
+                images: [
+                    'https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?auto=format&fit=crop&w=1200&q=80',
+                    'https://images.unsplash.com/photo-1522869635100-9f4c5e86aa37?auto=format&fit=crop&w=1200&q=80',
+                    'https://images.unsplash.com/photo-1586899028174-e7098604235b?auto=format&fit=crop&w=1200&q=80'
+                ],
+                link: 'https://github.com/kannagokul046-dot/Netflix-PowerBI-Dashboard'
+            },
+            {
+                id: 'northwind',
+                title: 'Northwind Analytics',
+                tags: ['DA', 'Python', 'ETL'],
+                desc: 'Engineered a robust supply chain analytics dataset from raw logs.',
+                motive: 'To ensure master data integrity and modernize a legacy database structure for high-reliability executive decision-making.',
+                impact: 'Reduced data retrieval times by 60% and improved master data accuracy to 99.9% for daily operational reports.',
+                done: [
+                    'Extracted, structured, and normalized the comprehensive Northwind operational database.',
+                    'Cleaned the dataset using Python (Pandas) to ensure uncompromising master data integrity.',
+                    'Performed advanced SQL analysis covering inventory turnaround times and employee performance metrics.',
+                    'Simulated an automated ETL pipeline for future operational scalability.'
+                ],
+                images: [
+                    'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=1200&q=80',
+                    'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=1200&q=80',
+                    'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?auto=format&fit=crop&w=1200&q=80'
+                ],
+                link: 'https://github.com/kannagokul046-dot/northwind-end-to-end-data-analysis'
+            }
+        ];
+
+        // Populate Skills
+        const skillsContainer = document.getElementById('skills-container');
+        SKILLS.forEach((s) => {
+            const el = document.createElement('div');
+            el.className = 'skill-item gsap-reveal';
+            el.innerHTML = `
+                <div class="skill-name">${s.name}</div>
+                <div class="skill-level">${s.level}%</div>
+                <div class="skill-bar-bg">
+                    <div class="skill-bar-fill" data-width="${s.level}%"></div>
+                </div>
+            `;
+            
+            // 3D Interactive Tilt
+            el.addEventListener('mousemove', e => {
+                const rect = el.getBoundingClientRect();
+                const rotateX = ((e.clientY - rect.top - rect.height / 2) / (rect.height / 2)) * -15; 
+                const rotateY = ((e.clientX - rect.left - rect.width / 2) / (rect.width / 2)) * 15;
+                el.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.05, 1.05, 1.05) translateY(-5px)`;
+                el.style.transition = 'none';
+                el.style.zIndex = '10';
+            });
+            el.addEventListener('mouseleave', () => {
+                el.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1) translateY(0)`;
+                el.style.transition = 'transform 0.4s ease';
+                el.style.zIndex = '1';
+            });
+            
+            skillsContainer.appendChild(el);
+        });
+
+        // Populate Projects
+        const grid = document.getElementById('projects-grid');
+        PROJECTS.forEach((p, index) => {
+            const el = document.createElement('div');
+            el.className = 'project-card interactable gsap-reveal';
+            el.innerHTML = `
+                <div class="project-tags">${p.tags.map(t=>`<span>${t}</span>`).join('')}</div>
+                <h3 class="project-title">${p.title}</h3>
+                <p class="card-desc">${p.desc}</p>
+                <div class="view-more">CLICK TO EXPAND DETAILS ↗</div>
+            `;
+            el.onclick = () => openProject(index);
+            
+            // 3D Interactive Tilt
+            el.addEventListener('mousemove', e => {
+                const rect = el.getBoundingClientRect();
+                const rotateX = ((e.clientY - rect.top - rect.height / 2) / (rect.height / 2)) * -10; 
+                const rotateY = ((e.clientX - rect.left - rect.width / 2) / (rect.width / 2)) * 10;
+                el.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.03, 1.03, 1.03) translateY(-10px)`;
+                el.style.transition = 'none';
+                el.style.zIndex = '10';
+            });
+            el.addEventListener('mouseleave', () => {
+                el.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1) translateY(0)`;
+                el.style.transition = 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)';
+                el.style.zIndex = '1';
+            });
+            
+            grid.appendChild(el);
+        });
+
+        // Initialize Lenis Smooth Scrolling (Optimized for performance)
+        let lenis = new Lenis({
+            lerp: 0.08, // Buttery smooth interpolation
+            wheelMultiplier: 1,
+            smoothWheel: true,
+            touchMultiplier: 2,
+            smoothTouch: false,
+        });
+
+        let scrollVelocity = 0;
+        let scrollY = 0;
+        lenis.on('scroll', (e) => { 
+            scrollVelocity = e.velocity; 
+            scrollY = e.scroll;
+            ScrollTrigger.update();
+        });
+
+        function raf(time) {
+            lenis.raf(time);
+            requestAnimationFrame(raf);
+        }
+        requestAnimationFrame(raf);
+
+        // Setup GSAP Scroll Animations
+        gsap.from(".gsap-hero", {
+            opacity: 0,
+            y: 100,
+            duration: 1.5,
+            stagger: 0.2,
+            ease: "power4.out"
+        });
+
+        gsap.utils.toArray('.gsap-reveal').forEach(element => {
+            ScrollTrigger.create({
+                trigger: element,
+                start: "top 85%",
+                onEnter: () => {
+                    gsap.to(element, { opacity: 1, y: 0, duration: 1, ease: "power3.out", overwrite: "auto" });
+                    // If it's a skill, animate the bar
+                    if(element.classList.contains('skill-item')) {
+                        const bar = element.querySelector('.skill-bar-fill');
+                        if(bar) { bar.style.width = bar.getAttribute('data-width'); }
+                    }
+                }
+            });
+        });
+
+        // Project Overlay Logic
+        const overlay = document.getElementById('project-overlay');
+        let modalObserver;
+
+        function openProject(index) {
+            const p = PROJECTS[index];
+            document.getElementById('ov-title').innerText = p.title;
+            document.getElementById('ov-motive').innerText = p.motive;
+            document.getElementById('ov-impact').innerText = p.impact;
+            document.getElementById('ov-done').innerHTML = p.done.map(d => `<li>${d}</li>`).join('');
+            
+            const gallery = document.getElementById('ov-gallery');
+            gallery.innerHTML = '';
+            p.images.forEach(imgSrc => {
+                const imgContainer = document.createElement('div');
+                imgContainer.className = 'real-image-container modal-reveal';
+                imgContainer.innerHTML = `<img src="${imgSrc}" alt="Project Visual" class="animated-img">`;
+                gallery.appendChild(imgContainer);
+            });
+            
+            document.getElementById('ov-link').href = p.link;
+            
+            overlay.classList.add('active');
+            lenis.stop(); // Stop scroll when overlay is active
+
+            // Setup Intersection Observer for scrolling inside modal
+            if(modalObserver) modalObserver.disconnect();
+            modalObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if(entry.isIntersecting) {
+                        entry.target.classList.add('in-view');
+                    }
+                });
+            }, { root: document.querySelector('.overlay-content'), threshold: 0.1 });
+
+            document.querySelectorAll('.modal-reveal').forEach(el => modalObserver.observe(el));
+        }
+
+        function closeProject() {
+            overlay.classList.remove('active');
+            lenis.start();
+        }
+
+        let webglMouseX = 0, webglMouseY = 0;
+
+        function createSparkle(x, y, isClick = false) {
+            const colors = ['#39ff14', '#00f3ff', '#00ff87', '#39ff14', '#ffffff'];
+            const spark = document.createElement('div');
+            spark.style.position = 'fixed';
+            spark.style.left = x + 'px';
+            spark.style.top = y + 'px';
+            spark.style.width = (Math.random() * 4 + 2) + 'px';
+            spark.style.height = spark.style.width;
+            spark.style.background = colors[Math.floor(Math.random() * colors.length)];
+            spark.style.borderRadius = '50%';
+            spark.style.pointerEvents = 'none';
+            spark.style.zIndex = '9999999';
+            spark.style.boxShadow = `0 0 10px ${spark.style.background}`;
+            document.body.appendChild(spark);
+
+            const angle = Math.random() * Math.PI * 2;
+            const distance = isClick ? (Math.random() * 200 + 50) : (Math.random() * 30 + 10);
+            const tx = Math.cos(angle) * distance;
+            const ty = Math.sin(angle) * distance + (isClick ? 100 : 20);
+
+            gsap.to(spark, {
+                x: tx, y: ty, opacity: 0, scale: 0,
+                duration: isClick ? (0.8 + Math.random() * 0.5) : (0.4 + Math.random() * 0.3),
+                ease: "power3.out",
+                onComplete: () => spark.remove()
+            });
+        }
+
+        document.addEventListener('mousemove', (e) => {
+            webglMouseX = (e.clientX / window.innerWidth) * 2 - 1;
+            webglMouseY = -(e.clientY / window.innerHeight) * 2 + 1;
+            
+            // Sparkle Trail Effect
+            if(Math.random() > 0.6) {
+                createSparkle(e.clientX, e.clientY, false);
+            }
+        });
+
+        // Hover effect for sound
+        document.body.addEventListener('mouseenter', (e) => {
+            if(e.target && e.target.classList && e.target.classList.contains('interactable')) {
+                playSound('hover');
+            }
+        }, true);
+
+        // Global Click Sound for Interactables
+        document.body.addEventListener('click', (e) => {
+            const isInteractable = e.target && e.target.classList && e.target.classList.contains('interactable');
+            const hasInteractableParent = e.target && e.target.closest && e.target.closest('.interactable');
+            if (isInteractable || hasInteractableParent) {
+                playSound('click');
+            }
+        }, true);
+
+        // --- Sound Effects (Web Audio API) ---
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx;
+        let droneStarted = false;
+
+        function initAudio() {
+            if(!audioCtx) { audioCtx = new AudioContext(); }
+            if(audioCtx.state === 'suspended') { audioCtx.resume(); }
+            if(!droneStarted && audioCtx.state === 'running') { startAmbientDrone(); }
+        }
+
+        document.body.addEventListener('click', initAudio, { once: true });
+        document.body.addEventListener('mousemove', initAudio, { once: true });
+
+        function startAmbientDrone() {
+            if(droneStarted) return;
+            droneStarted = true;
+            
+            const osc1 = audioCtx.createOscillator();
+            const osc2 = audioCtx.createOscillator();
+            const filter = audioCtx.createBiquadFilter();
+            const gainNode = audioCtx.createGain();
+            
+            osc1.type = 'sine'; osc1.frequency.value = 55;
+            osc2.type = 'triangle'; osc2.frequency.value = 55.5;
+            filter.type = 'lowpass'; filter.frequency.value = 100;
+            
+            gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.04, audioCtx.currentTime + 5); 
+            
+            osc1.connect(filter); osc2.connect(filter);
+            filter.connect(gainNode); gainNode.connect(audioCtx.destination);
+            
+            osc1.start(); osc2.start();
+        }
+
+        function playSound(type) {
+            if(!audioCtx) initAudio();
+            if(audioCtx.state === 'suspended') {
+                audioCtx.resume().then(() => _playOsc(type));
+            } else {
+                _playOsc(type);
+            }
+        }
+
+        function _playOsc(type) {
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.connect(gainNode); gainNode.connect(audioCtx.destination);
+
+            if(type === 'hover') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.1);
+                gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0.02, audioCtx.currentTime + 0.05);
+                gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.1);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+            } else if(type === 'click') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.15);
+                const filter = audioCtx.createBiquadFilter();
+                filter.type = 'bandpass'; filter.frequency.value = 1000;
+                osc.disconnect(); osc.connect(filter); filter.connect(gainNode);
+                gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime); // LOUDER
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.15);
+            }
+        }
+
+        // --- EXTREMELY ANIMATED 3D BACKGROUND (Scroll Parallax Flythrough) ---
+        const canvas = document.getElementById('webgl-canvas');
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x000000, 0.001);
+
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 4000);
+        camera.position.z = 800; // Start further back
+
+        const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true, powerPreference: 'high-performance' });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+        // 1. Massive Swirling Particle Blob - VIBRANT NEON
+        const isMobile = window.innerWidth < 768;
+        const particlesCount = isMobile ? 800 : 4000; // Ultra-optimized for mobile GPUs
+        const geometry = new THREE.BufferGeometry();
+        const posArray = new Float32Array(particlesCount * 3);
+        const targetArray = new Float32Array(particlesCount * 3);
+        const colorsArray = new Float32Array(particlesCount * 3);
+        
+        const colorPalette = [
+            new THREE.Color(0x39ff14), // Radium Green
+            new THREE.Color(0x00f3ff), // Neon Cyan
+            new THREE.Color(0x00ff87), // Bright Cyan Green
+            new THREE.Color(0x39ff14)  // Radium Green
+        ];
+
+        for(let i = 0; i < particlesCount; i++) {
+            const phi = Math.acos(-1 + (2 * i) / particlesCount);
+            const theta = Math.sqrt(particlesCount * Math.PI) * phi;
+            
+            // Restored the "circle" (spherical) animation, but scaled up massively for full web coverage
+            const r = 600 + Math.random() * 1000; 
+            const x = r * Math.cos(theta) * Math.sin(phi);
+            const y = r * Math.sin(theta) * Math.sin(phi);
+            const z = r * Math.cos(phi);
+            
+            posArray[i*3] = x * (Math.random() * 10);
+            posArray[i*3+1] = y * (Math.random() * 10);
+            posArray[i*3+2] = z * (Math.random() * 10);
+            targetArray[i*3] = x; targetArray[i*3+1] = y; targetArray[i*3+2] = z;
+
+            const color = colorPalette[Math.floor(Math.random() * colorPalette.length)];
+            colorsArray[i*3] = color.r;
+            colorsArray[i*3+1] = color.g;
+            colorsArray[i*3+2] = color.b;
+        }
+        geometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+        geometry.setAttribute('color', new THREE.BufferAttribute(colorsArray, 3));
+
+        const circleCanvas = document.createElement('canvas');
+        circleCanvas.width = 16; circleCanvas.height = 16;
+        const ctx = circleCanvas.getContext('2d');
+        const gradient = ctx.createRadialGradient(8,8,0, 8,8,8);
+        gradient.addColorStop(0, 'rgba(255,255,255,1)');
+        gradient.addColorStop(0.2, 'rgba(255,255,255,0.8)');
+        gradient.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = gradient; ctx.fillRect(0,0,16,16);
+        const texture = new THREE.CanvasTexture(circleCanvas);
+
+        const material = new THREE.PointsMaterial({ size: 10, map: texture, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, vertexColors: true });
+        const particlesMesh = new THREE.Points(geometry, material);
+        scene.add(particlesMesh);
+
+        // 2. High-Speed Floating Data Geometries - VIBRANT
+        const geoGroup = new THREE.Group();
+        const mats = [
+            new THREE.MeshBasicMaterial({ color: 0x39ff14, wireframe: true, transparent: true, opacity: 0.5 }),
+            new THREE.MeshBasicMaterial({ color: 0x00f3ff, wireframe: true, transparent: true, opacity: 0.5 }),
+            new THREE.MeshBasicMaterial({ color: 0x39ff14, wireframe: true, transparent: true, opacity: 0.5 })
+        ];
+        
+        const numGeometries = isMobile ? 12 : 40; // Less geometry math on mobile
+        for(let i=0; i<numGeometries; i++) {
+            const size = 60 + Math.random()*200;
+            let mesh;
+            const mat = mats[Math.floor(Math.random() * mats.length)];
+            if (i % 3 === 0) mesh = new THREE.Mesh(new THREE.TorusKnotGeometry(size, size*0.1, 64, 8), mat);
+            else if (i % 3 === 1) mesh = new THREE.Mesh(new THREE.IcosahedronGeometry(size, 0), mat);
+            else mesh = new THREE.Mesh(new THREE.OctahedronGeometry(size, 1), mat);
+            
+            const startX = (Math.random()-0.5)*2000;
+            const startY = (Math.random()-0.5)*2000;
+            const startZ = (Math.random()-0.5)*2000 - 400;
+
+            mesh.position.set(startX, startY, startZ);
+            
+            const length = Math.sqrt(startX*startX + startY*startY + startZ*startZ) || 1;
+            
+            mesh.userData = { 
+                rx: (Math.random()-0.5)*0.08, 
+                ry: (Math.random()-0.5)*0.08,
+                floatPhase: Math.random()*Math.PI*2,
+                baseX: startX,
+                baseY: startY,
+                baseZ: startZ,
+                dirX: startX / length,
+                dirY: startY / length,
+                dirZ: startZ / length
+            };
+            geoGroup.add(mesh);
+        }
+        scene.add(geoGroup);
+
+        // 3. Constellation Network Lines
+        const lineMaterial = new THREE.LineBasicMaterial({ color: 0x39ff14, transparent: true, opacity: 0.25 });
+        const lineGeometry = new THREE.BufferGeometry();
+        const maxConnections = 40 * 40; // Max possible lines for 40 geometries
+        const linePositions = new Float32Array(maxConnections * 3 * 2);
+        lineGeometry.setAttribute('position', new THREE.BufferAttribute(linePositions, 3));
+        const lineMesh = new THREE.LineSegments(lineGeometry, lineMaterial);
+        geoGroup.add(lineMesh);
+
+        let time = 0;
+        let shockwavePulse = 0;
+
+        // Sparkles on Click
+        document.addEventListener('click', (e) => {
+            // Sound Wave Animation Ripple
+            const wave = document.createElement('div');
+            wave.className = 'sound-wave';
+            wave.style.left = e.clientX + 'px';
+            wave.style.top = e.clientY + 'px';
+            document.body.appendChild(wave);
+            setTimeout(() => wave.remove(), 600);
+
+            for(let i=0; i<25; i++) {
+                createSparkle(e.clientX, e.clientY, true);
+            }
+            
+            // Trigger 3D Shockwave
+            shockwavePulse = 2.5; 
+            
+            // Play sound effect on every click
+            playSound('click');
+        });
+
+        function animateWebGL() {
+            requestAnimationFrame(animateWebGL);
+            time += 0.02; 
+            shockwavePulse *= 0.92; // Decay the shockwave
+            
+            // Strong Mouse Parallax for blob
+            particlesMesh.rotation.y += 0.05 * ((webglMouseX * 2) - particlesMesh.rotation.y);
+            particlesMesh.rotation.x += 0.05 * ((webglMouseY * 2) - particlesMesh.rotation.x);
+
+            // ELIMINATED HEAVY CPU LOOP: Use GPU mesh transforms instead of per-vertex math for 60FPS lock
+            particlesMesh.rotation.z += 0.002; // Constant slow spin
+            particlesMesh.scale.set(1 + (shockwavePulse * 0.5), 1 + (shockwavePulse * 0.5), 1 + (shockwavePulse * 0.5));
+
+            // Animate Geometries aggressively based on SCROLL POSITION (Explosion Effect!)
+            const speedBoost = Math.abs(scrollVelocity) * 0.003;
+            const scrollExpansion = scrollY * 1.5; // This pushes the shapes outward dramatically as you scroll
+
+            geoGroup.children.forEach((mesh, idx) => {
+                // Unique Animation: Make them orbit around each other in a helix when scrolling
+                const orbitOffset = Math.sin(time + idx) * 100 * speedBoost * 50;
+
+                mesh.rotation.x += mesh.userData.rx + speedBoost + (shockwavePulse * 0.05);
+                mesh.rotation.y += mesh.userData.ry + speedBoost + (shockwavePulse * 0.05);
+                mesh.rotation.z += speedBoost * 0.5;
+                
+                // Explode outwards from center based on scrollY + Shockwave push
+                mesh.position.x = mesh.userData.baseX + (mesh.userData.dirX * (scrollExpansion + shockwavePulse * 300)) + orbitOffset;
+                mesh.position.y = mesh.userData.baseY + Math.sin(time + mesh.userData.floatPhase) * 150 + (mesh.userData.dirY * scrollExpansion);
+                mesh.position.z = mesh.userData.baseZ + (mesh.userData.dirZ * scrollExpansion) - orbitOffset;
+                
+                // Color pulse on shockwave
+                if (mesh.material) {
+                    mesh.material.opacity = 0.2 + (shockwavePulse * 0.2);
+                }
+            });
+
+            // Constellation Network Logic: Connect nearby geometries
+            let vertexIndex = 0;
+            // The shapes spread out a lot due to scrollExpansion, we increase connection distance dynamically
+            const thresholdSq = 400000 + (Math.abs(scrollExpansion) * 1000); 
+            
+            for(let i=0; i<numGeometries; i++) { // Loop over geometries
+                const meshA = geoGroup.children[i];
+                if (!meshA.userData.baseX) continue; // Safety check
+                
+                for(let j=i+1; j<numGeometries; j++) {
+                    const meshB = geoGroup.children[j];
+                    if (!meshB.userData.baseX) continue;
+                    
+                    const dx = meshA.position.x - meshB.position.x;
+                    const dy = meshA.position.y - meshB.position.y;
+                    const dz = meshA.position.z - meshB.position.z;
+                    const distSq = dx*dx + dy*dy + dz*dz;
+                    
+                    if(distSq < thresholdSq) {
+                        linePositions[vertexIndex++] = meshA.position.x;
+                        linePositions[vertexIndex++] = meshA.position.y;
+                        linePositions[vertexIndex++] = meshA.position.z;
+                        
+                        linePositions[vertexIndex++] = meshB.position.x;
+                        linePositions[vertexIndex++] = meshB.position.y;
+                        linePositions[vertexIndex++] = meshB.position.z;
+                    }
+                }
+            }
+            lineGeometry.setDrawRange(0, vertexIndex / 3);
+            lineGeometry.attributes.position.needsUpdate = true;
+            
+            // Aggressive Mouse Parallax for geometries
+            geoGroup.rotation.y += 0.05 * ((webglMouseX * 2.5) - geoGroup.rotation.y);
+            geoGroup.rotation.x += 0.05 * ((webglMouseY * 2.5) - geoGroup.rotation.x);
+            
+            // CAMERA FLY-THROUGH TIED TO SCROLL & MOUSE PARALLAX!
+            const targetCamZ = 800 - (scrollY * 0.6) + (shockwavePulse * 150);
+            const targetCamY = -(scrollY * 0.3) + (shockwavePulse * 50) + (webglMouseY * 300);
+            const targetCamX = (webglMouseX * 400);
+
+            camera.position.x += (targetCamX - camera.position.x) * 0.05;
+            camera.position.y += (targetCamY - camera.position.y) * 0.05;
+            camera.position.z += (targetCamZ - camera.position.z) * 0.05;
+            
+            camera.rotation.y = -webglMouseX * 0.2;
+            camera.rotation.x = webglMouseY * 0.2;
+
+            scene.rotation.z = scrollY * 0.0005 + (shockwavePulse * 0.02) + (webglMouseX * 0.1); // Dramatic camera banking
+
+            renderer.render(scene, camera);
+        }
+        animateWebGL();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+    </script>
+</body>
+</html>
